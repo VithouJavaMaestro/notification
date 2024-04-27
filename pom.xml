@@ -60,6 +60,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.keycloak/keycloak-services -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <version>24.0.3</version>
+            <scope>provided</scope>
+        </dependency>
 
 
     </dependencies>

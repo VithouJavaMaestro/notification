@@ -1,5 +1,6 @@
 package org.vtx.notification.payload;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,14 +23,14 @@ public class SMTPNotification implements Notification {
     private String from;
     private Set<String> recipients;
     private Set<String> bcc;
-    private String replyTo;
+    private Set<String> replyTo;
     private Date sentDate;
     private String subject;
     private String description;
     private String body;
     private Set<String> ccs;
     private String fileName;
-    private List<Attachment> attachments;
+    private List<Attachment> attachments = new ArrayList<>();
     private Map<String, byte[]> inlines = new HashMap<>();
     private String mimeType;
     private boolean isBodyAsHtml;

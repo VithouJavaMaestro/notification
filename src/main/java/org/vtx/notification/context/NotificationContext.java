@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.util.StringUtils;
+import org.vtx.notification.payload.Notification;
 import org.vtx.notification.status.NotificationStatus;
 
 @Getter

@@ -1,69 +1,90 @@
 package org.vtx.notification.service;
 
-import jakarta.mail.MessagingException;
+import jakarta.activation.DataHandler;
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.Part;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
-import java.nio.charset.StandardCharsets;
+import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessagePreparator;
+import org.springframework.util.CollectionUtils;
+import org.vtx.notification.context.NotificationContext;
+import org.vtx.notification.converter.StringToAddressConverter;
+import org.vtx.notification.payload.SMTPNotification;
+
 import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
-import lombok.RequiredArgsConstructor;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-import org.vtx.notification.context.NotificationContext;
-import org.vtx.notification.payload.SMTPNotification;
 
 @RequiredArgsConstructor
 public class SMTPNotificationProvider extends AbstractNotificationService<SMTPNotification> {
+
     private final JavaMailSender javaMailSender;
 
     @Override
     protected void doExecute(NotificationContext notificationContext, SMTPNotification smtpNotification) {
-        try {
+        MimeMessagePreparator mimeMessagePreparator = new MimeMessagePreparator() {
+            @Override
+            public void prepare(@NonNull MimeMessage mimeMessage) throws Exception {
 
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(
-                    javaMailSender.createMimeMessage(), true, StandardCharsets.UTF_8.name()
-            );
+                StringToAddressConverter stringToAddressConverter = new StringToAddressConverter();
 
-            String[] recipients = smtpNotification.getRecipients().toArray(new String[]{});
+                if (!CollectionUtils.isEmpty(smtpNotification.getCcs())) {
+                    Address[] ccs = stringToAddressConverter.converts(smtpNotification.getCcs())
+                            .toArray(new Address[]{});
+                    mimeMessage.setRecipients(Message.RecipientType.CC, ccs);
+                }
 
-            if (!CollectionUtils.isEmpty(smtpNotification.getCcs())) {
-                var ccs = smtpNotification.getCcs().toArray(new String[]{});
-                mimeMessageHelper.setCc(ccs);
-            }
+                if (!CollectionUtils.isEmpty(smtpNotification.getBcc())) {
+                    Address[] bcc = stringToAddressConverter.converts(smtpNotification.getBcc())
+                            .toArray(new Address[]{});
+                    mimeMessage.setRecipients(Message.RecipientType.BCC, bcc);
+                }
 
-            if (!CollectionUtils.isEmpty(smtpNotification.getBcc())) {
-                var bcc = smtpNotification.getCcs().toArray(new String[]{});
-                mimeMessageHelper.setBcc(bcc);
-            }
+                if (Objects.isNull(smtpNotification.getSentDate())) {
+                    mimeMessage.setSentDate(Date.from(Instant.now()));
+                } else {
+                    mimeMessage.setSentDate(smtpNotification.getSentDate());
+                }
 
-            if (Objects.isNull(smtpNotification.getSentDate())) {
-                mimeMessageHelper.setSentDate(Date.from(Instant.now()));
-            } else {
-                mimeMessageHelper.setSentDate(smtpNotification.getSentDate());
-            }
+                if (!CollectionUtils.isEmpty(smtpNotification.getReplyTo())) {
+                    Address[] replyTo = stringToAddressConverter.converts(smtpNotification.getReplyTo())
+                            .toArray(new Address[]{});
+                    mimeMessage.setReplyTo(replyTo);
+                }
 
-            if (StringUtils.hasText(smtpNotification.getReplyTo())) {
-                mimeMessageHelper.setReplyTo(smtpNotification.getReplyTo());
-            }
+                Address[] recipients = stringToAddressConverter.converts(smtpNotification.getRecipients())
+                        .toArray(Address[]::new);
 
-            mimeMessageHelper.setText(smtpNotification.getBody());
-            mimeMessageHelper.setSubject(smtpNotification.getSubject());
-            mimeMessageHelper.setFrom(smtpNotification.getFrom());
-            mimeMessageHelper.setTo(recipients);
+                mimeMessage.setText(smtpNotification.getBody());
+                mimeMessage.setSubject(smtpNotification.getSubject());
+                mimeMessage.setFrom(smtpNotification.getFrom());
+                mimeMessage.setRecipients(Message.RecipientType.TO, recipients);
 
-            if (!CollectionUtils.isEmpty(smtpNotification.getAttachments())) {
-                for (var attachment : smtpNotification.getAttachments()) {
-                    var byteArrayDataSource = new ByteArrayDataSource(attachment.getContent(), attachment.getMimetype());
-                    mimeMessageHelper.addAttachment(attachment.getFilename(), byteArrayDataSource);
+                if (!CollectionUtils.isEmpty(smtpNotification.getAttachments())) {
+                    for (var attachment : smtpNotification.getAttachments()) {
+
+                        MimeBodyPart mimeBodyPart = new MimeBodyPart();
+
+                        mimeBodyPart.setDisposition(Part.ATTACHMENT);
+                        mimeBodyPart.setFileName(attachment.getFilename());
+                        var byteArrayDataSource = new ByteArrayDataSource(attachment.getContent(), attachment.getMimetype());
+                        mimeBodyPart.setDataHandler(new DataHandler(byteArrayDataSource));
+
+                        MimeMultipart mimeMultipart = new MimeMultipart();
+                        mimeMultipart.addBodyPart(mimeBodyPart);
+
+                        mimeMessage.setContent(mimeMultipart);
+                    }
                 }
             }
+        };
 
-            javaMailSender.send(mimeMessageHelper.getMimeMessage());
-
-        } catch (MessagingException e) {
-            logger.error("An error occurred while sending mail with smtp notification", e);
-        }
+        javaMailSender.send(mimeMessagePreparator);
     }
 }

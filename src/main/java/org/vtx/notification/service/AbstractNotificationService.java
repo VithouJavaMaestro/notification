@@ -1,7 +1,5 @@
 package org.vtx.notification.service;
 
-import java.time.Instant;
-import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.vtx.notification.context.NotificationContext;
@@ -11,7 +9,10 @@ import org.vtx.notification.payload.Notification;
 import org.vtx.notification.status.NotificationStatus;
 import org.vtx.notification.validator.NotificationValidatorAggregator;
 
-public abstract class AbstractNotificationService<T extends Notification> implements NotificationService<T> {
+import java.time.Instant;
+import java.util.Date;
+
+public abstract class AbstractNotificationService<T extends Notification> implements NotificationProvider<T> {
     protected static final Log logger = LogFactory.getLog(AbstractNotificationService.class);
     private NotificationValidatorAggregator notificationValidatorAggregator;
     private final CompositeNotificationListener compositeNotificationListener = new CompositeNotificationListener();
@@ -62,7 +63,6 @@ public abstract class AbstractNotificationService<T extends Notification> implem
             logger.error("An error occurred while executing notification", throwable);
             notificationContext.setNotificationStatus(NotificationStatus.FAILED);
             notificationContext.setFailedException(throwable);
-            compositeNotificationListener.beforeExecuting(notificationContext, notification);
             compositeNotificationListener.afterExecuting(notificationContext, notification);
         }
     }

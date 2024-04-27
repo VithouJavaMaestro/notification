@@ -21,6 +21,7 @@ public class MailConfiguration {
     @ConditionalOnProperty(prefix = "vtx.mail", name = "provider", havingValue = NotificationType.SMTP)
     @ConditionalOnMissingBean
     public JavaMailSender configureJavaMailSender(MailProperties properties) {
+
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(properties.getHost());
         mailSender.setPort(properties.getPort());
