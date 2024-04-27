@@ -21,11 +21,26 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * A concrete implementation of {@link AbstractNotificationService} for sending SMTP notifications.
+ *
+ * <p>This class handles the execution of SMTP notifications by preparing and sending MimeMessage objects
+ * via a JavaMailSender. It overrides the {@code doExecute} method to define the SMTP notification sending logic.</p>
+ *
+ * @author Chanthavithou
+ */
 @RequiredArgsConstructor
 public class SMTPNotificationProvider extends AbstractNotificationService<SMTPNotification> {
 
+    /** The JavaMailSender used for sending MimeMessage objects. */
     private final JavaMailSender javaMailSender;
 
+    /**
+     * Executes the SMTP notification sending logic.
+     *
+     * @param notificationContext The context of the notification execution.
+     * @param smtpNotification    The SMTP notification to execute.
+     */
     @Override
     protected void doExecute(NotificationContext notificationContext, SMTPNotification smtpNotification) {
         MimeMessagePreparator mimeMessagePreparator = new MimeMessagePreparator() {

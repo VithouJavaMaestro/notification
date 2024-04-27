@@ -1,6 +1,5 @@
 package org.vtx.notification.config;
 
-import java.util.Properties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.mail.MailProperties;
@@ -13,10 +12,24 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.vtx.notification.payload.NotificationType;
 import org.vtx.notification.service.SMTPNotificationProvider;
 
+import java.util.Properties;
+
+/**
+ * Configuration class for setting up email functionality.
+ * This class configures the JavaMailSender based on provided properties.
+ * @author Chanthavithou THEN
+ */
 @Configuration
 @Import({SMTPNotificationProvider.class})
 @EnableConfigurationProperties({MailProperties.class})
 public class MailConfiguration {
+
+    /**
+     * Configures the JavaMailSender bean if the mail provider is SMTP and no existing bean is found.
+     *
+     * @param properties The properties containing mail configuration details.
+     * @return Configured JavaMailSender bean.
+     */
     @Bean
     @ConditionalOnProperty(prefix = "vtx.mail", name = "provider", havingValue = NotificationType.SMTP)
     @ConditionalOnMissingBean
