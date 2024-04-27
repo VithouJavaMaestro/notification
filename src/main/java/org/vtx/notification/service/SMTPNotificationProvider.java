@@ -3,6 +3,7 @@ package org.vtx.notification.service;
 import jakarta.activation.DataHandler;
 import jakarta.mail.Address;
 import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
 import jakarta.mail.Part;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
@@ -11,6 +12,7 @@ import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.util.CollectionUtils;
 import org.vtx.notification.context.NotificationContext;
@@ -32,7 +34,9 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class SMTPNotificationProvider extends AbstractNotificationService<SMTPNotification> {
 
-    /** The JavaMailSender used for sending MimeMessage objects. */
+    /**
+     * The JavaMailSender used for sending MimeMessage objects.
+     */
     private final JavaMailSender javaMailSender;
 
     /**
@@ -42,7 +46,7 @@ public class SMTPNotificationProvider extends AbstractNotificationService<SMTPNo
      * @param smtpNotification    The SMTP notification to execute.
      */
     @Override
-    protected void doExecute(NotificationContext notificationContext, SMTPNotification smtpNotification) {
+    protected void doSend(NotificationContext notificationContext, SMTPNotification smtpNotification) {
         MimeMessagePreparator mimeMessagePreparator = new MimeMessagePreparator() {
             @Override
             public void prepare(@NonNull MimeMessage mimeMessage) throws Exception {
@@ -82,24 +86,52 @@ public class SMTPNotificationProvider extends AbstractNotificationService<SMTPNo
                 mimeMessage.setRecipients(Message.RecipientType.TO, recipients);
 
                 if (!CollectionUtils.isEmpty(smtpNotification.getAttachments())) {
+
                     for (var attachment : smtpNotification.getAttachments()) {
 
-                        MimeBodyPart mimeBodyPart = new MimeBodyPart();
-
-                        mimeBodyPart.setDisposition(Part.ATTACHMENT);
-                        mimeBodyPart.setFileName(attachment.getFilename());
-                        var byteArrayDataSource = new ByteArrayDataSource(attachment.getContent(), attachment.getMimetype());
-                        mimeBodyPart.setDataHandler(new DataHandler(byteArrayDataSource));
+                        final MimeBodyPart mimeBodyPart = getMimeBodyPart(
+                                attachment.getFilename(), attachment.getMimetype(), Part.ATTACHMENT, attachment.getContent()
+                        );
 
                         MimeMultipart mimeMultipart = new MimeMultipart();
                         mimeMultipart.addBodyPart(mimeBodyPart);
 
-                        mimeMessage.setContent(mimeMultipart);
+                        mimeMessage.setContent(mimeMultipart, attachment.getMimetype());
                     }
+
+                }
+
+                if (!CollectionUtils.isEmpty(smtpNotification.getInlines())) {
+
+                    for (var inline : smtpNotification.getInlines()) {
+
+                        final MimeBodyPart mimeBodyPart = getMimeBodyPart(
+                                inline.getFilename(), inline.getMimetype(), Part.INLINE, inline.getContent()
+                        );
+
+                        mimeBodyPart.setContentID(inline.getContentId());
+
+                        MimeMultipart mimeMultipart = new MimeMultipart();
+                        mimeMultipart.addBodyPart(mimeBodyPart);
+
+                        mimeMessage.setContent(mimeMultipart, inline.getMimetype());
+                    }
+
                 }
             }
         };
 
         javaMailSender.send(mimeMessagePreparator);
+    }
+
+    private MimeBodyPart getMimeBodyPart(String filename, String mimeType, String part, byte[] content) throws MessagingException {
+        MimeBodyPart mimeBodyPart = new MimeBodyPart();
+
+        mimeBodyPart.setDisposition(part);
+        mimeBodyPart.setFileName(filename);
+        var byteArrayDataSource = new ByteArrayDataSource(content, mimeType);
+        mimeBodyPart.setDataHandler(new DataHandler(byteArrayDataSource));
+
+        return mimeBodyPart;
     }
 }

@@ -15,7 +15,7 @@ import org.vtx.notification.status.NotificationStatus;
  * Represents the context for a notification, encapsulating various details such as status, timing, context information,
  * and any encountered exceptions during processing.
  *
- * @author Chanthavithou
+     * @author Chanthavithou
  */
 @Getter
 @Setter

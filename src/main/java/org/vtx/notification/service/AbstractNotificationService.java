@@ -22,13 +22,19 @@ import java.util.Date;
  * @author Chanthavithou
  */
 public abstract class AbstractNotificationService<T extends Notification> implements NotificationProvider<T> {
-    /** The logger for logging notification-related messages and errors. */
+    /**
+     * The logger for logging notification-related messages and errors.
+     */
     protected static final Log logger = LogFactory.getLog(AbstractNotificationService.class);
 
-    /** The aggregator for validation of notifications. */
+    /**
+     * The aggregator for validation of notifications.
+     */
     private NotificationValidatorAggregator notificationValidatorAggregator;
 
-    /** The composite notification listener to handle notification execution events. */
+    /**
+     * The composite notification listener to handle notification execution events.
+     */
     private final CompositeNotificationListener<T> compositeNotificationListener = new CompositeNotificationListener<>();
 
     /**
@@ -74,7 +80,7 @@ public abstract class AbstractNotificationService<T extends Notification> implem
 
         try {
             compositeNotificationListener.beforeExecuting(notificationContext, notification);
-            doExecute(notificationContext, notification);
+            doSend(notificationContext, notification);
             notificationContext.setNotificationStatus(NotificationStatus.COMPLETED);
             compositeNotificationListener.afterExecuting(notificationContext, notification);
             notificationContext.setEndTime(Date.from(Instant.now()));
@@ -97,5 +103,5 @@ public abstract class AbstractNotificationService<T extends Notification> implem
      * @param notificationContext The context of the notification execution.
      * @param notification        The notification to execute.
      */
-    protected abstract void doExecute(NotificationContext notificationContext, T notification);
+    protected abstract void doSend(NotificationContext notificationContext, T notification);
 }

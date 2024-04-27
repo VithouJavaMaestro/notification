@@ -1,17 +1,16 @@
 package org.vtx.notification.payload;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -31,7 +30,7 @@ public class SMTPNotification implements Notification {
     private Set<String> ccs;
     private String fileName;
     private List<Attachment> attachments = new ArrayList<>();
-    private Map<String, byte[]> inlines = new HashMap<>();
+    private List<Inline> inlines = new ArrayList<>();
     private String mimeType;
     private boolean isBodyAsHtml;
 
